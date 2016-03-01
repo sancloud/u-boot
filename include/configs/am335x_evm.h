@@ -159,6 +159,8 @@
 		"if test $board_name = A335BNLT; then " \
 			"if test $board_rev = BBG1; then " \
 				"setenv fdtfile am335x-bonegreen.dtb; setenv fdtbase am335x-bonegreen; " \
+			"elif test $board_rev = BBEN; then " \
+				"setenv fdtfile am335x-boneenhanced.dtb; setenv fdtbase am335x-boneenhanced; " \
 			"else " \
 				"setenv fdtfile am335x-boneblack.dtb; setenv fdtbase am335x-boneblack; " \
 			"fi; " \

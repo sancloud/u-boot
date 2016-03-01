@@ -525,6 +525,8 @@ int board_late_init(void)
 	/* BeagleBone Green has 0x1a at [0], they are free to increment 'a' */
 	if ( (header.version[0] != 0x30) && ( (header.version[0] & 0xF0) == 0x10 ) ) {
 		setenv("board_rev", "BBG1");
+	} else 	if ( (header.version[0] == 'S') && (header.version[1] == 'E') ) {
+		setenv("board_rev", "BBEN");
 	} else {
 		strncpy(safe_string, (char *)header.version, sizeof(header.version));
 		safe_string[sizeof(header.version)] = 0;
@@ -639,7 +641,7 @@ int board_eth_init(bd_t *bis)
 	if (read_eeprom(&header) < 0)
 		puts("Could not get board ID.\n");
 
-	if (board_is_bone(&header) || board_is_bone_lt(&header) ||
+	if (board_is_bone(&header) || (board_is_bone_lt(&header) && !board_is_bone_lt_enhanced(&header)) ||
 	    board_is_idk(&header)) {
 		writel(MII_MODE_ENABLE, &cdev->miisel);
 		cpsw_slaves[0].phy_if = cpsw_slaves[1].phy_if =
@@ -669,7 +671,7 @@ int board_eth_init(bd_t *bis)
 #define AR8051_DEBUG_RGMII_CLK_DLY_REG	0x5
 #define AR8051_RGMII_TX_CLK_DLY		0x100
 
-	if (board_is_evm_sk(&header) || board_is_gp_evm(&header)) {
+	if (board_is_evm_sk(&header) || board_is_gp_evm(&header) || board_is_bone_lt_enhanced(&header)) {
 		const char *devname;
 		devname = miiphy_get_current_dev();
 
