@@ -523,7 +523,7 @@ int board_late_init(void)
 	setenv("board_name", safe_string);
 
 	/* BeagleBone Green has 0x1a at [0], they are free to increment 'a' */
-	if ( (header.version[0] != 0x30) && (header.version[0] & (1 << 4)) ) {
+	if ( (header.version[0] != 0x30) && ( (header.version[0] & 0xF0) == 0x10 ) ) {
 		setenv("board_rev", "BBG1");
 	} else {
 		strncpy(safe_string, (char *)header.version, sizeof(header.version));
