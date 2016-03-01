@@ -17,6 +17,7 @@
 #define __CONFIG_AM335X_EVM_H
 
 #include <configs/ti_am335x_common.h>
+#define CONFIG_ENV_IS_NOWHERE
 
 #ifndef CONFIG_SPL_BUILD
 #ifndef CONFIG_FIT
@@ -93,19 +94,24 @@
 		"root=${spiroot} " \
 		"rootfstype=${spirootfstype}\0" \
 	"bootenv=uEnv.txt\0" \
-	"loadbootscript=load mmc ${mmcdev} ${loadaddr} boot.scr\0" \
-	"bootscript=echo Running bootscript from mmc${mmcdev} ...; " \
+	"script=boot.scr\0" \
+	"scriptfile=${script}\0" \
+	"loadbootscript=load ${interface} ${bootpart} ${loadaddr} ${scriptfile};\0" \
+	"bootscript=echo Running bootscript from mmc${bootpart} ...; " \
 		"source ${loadaddr}\0" \
-	"loadbootenv=load mmc ${mmcdev} ${loadaddr} ${bootenv}\0" \
-	"importbootenv=echo Importing environment from mmc ...; " \
+	"loadbootenv=load ${interface} ${bootpart} ${loadaddr} ${bootenv}\0" \
+	"importbootenv=echo Importing environment from ${interface} ...; " \
 		"env import -t -r $loadaddr $filesize\0" \
 	"ramargs=setenv bootargs console=${console} " \
 		"${optargs} " \
 		"root=${ramroot} " \
 		"rootfstype=${ramrootfstype}\0" \
-	"loadramdisk=load mmc ${mmcdev} ${rdaddr} ramdisk.gz\0" \
-	"loadimage=load mmc ${bootpart} ${loadaddr} ${bootdir}/${bootfile}\0" \
-	"loadfdt=load mmc ${bootpart} ${fdtaddr} ${bootdir}/${fdtfile}\0" \
+	"loadramdisk=load ${interface} ${mmcdev} ${rdaddr} ramdisk.gz\0" \
+	"loadimage=load ${interface} ${bootpart} ${loadaddr} ${bootdir}/${bootfile}\0" \
+	"loadrd=load ${interface} ${bootpart} ${rdaddr} ${bootdir}/${rdfile}; setenv rdsize ${filesize}\0" \
+	"loadfdt=echo loading ${fdtdir}/${fdtfile} ...; load ${interface} ${bootpart} ${fdtaddr} ${fdtdir}/${fdtfile}\0" \
+	"failumsboot=echo; echo FAILSAFE: U-Boot UMS (USB Mass Storage) enabled, media now available over the usb slave port ...; " \
+		"ums 0 ${interface} 1;\0" \
 	"mmcloados=run args_mmc; " \
 		"if test ${boot_fdt} = yes || test ${boot_fdt} = try; then " \
 			"if run loadfdt; then " \
@@ -120,8 +126,8 @@
 		"else " \
 			"bootz; " \
 		"fi;\0" \
-	"mmcboot=mmc dev ${mmcdev}; " \
-		"if mmc rescan; then " \
+	"mmcboot=${interface} dev ${mmcdev}; " \
+		"if ${interface} rescan; then " \
 			"echo SD/MMC found on device ${mmcdev};" \
 			"if run loadbootscript; then " \
 				"run bootscript;" \
@@ -149,27 +155,42 @@
 		"bootz ${loadaddr} ${rdaddr} ${fdtaddr}\0" \
 	"findfdt="\
 		"if test $board_name = A335BONE; then " \
-			"setenv fdtfile am335x-bone.dtb; fi; " \
+			"setenv fdtfile am335x-bone.dtb; setenv fdtbase am335x-bone; fi; " \
 		"if test $board_name = A335BNLT; then " \
-			"setenv fdtfile am335x-boneblack.dtb; fi; " \
+			"if test $board_rev = BBG1; then " \
+				"setenv fdtfile am335x-bonegreen.dtb; setenv fdtbase am335x-bonegreen; " \
+			"else " \
+				"setenv fdtfile am335x-boneblack.dtb; setenv fdtbase am335x-boneblack; " \
+			"fi; " \
+		"fi; " \
 		"if test $board_name = A33515BB; then " \
 			"setenv fdtfile am335x-evm.dtb; fi; " \
 		"if test $board_name = A335X_SK; then " \
 			"setenv fdtfile am335x-evmsk.dtb; fi; " \
 		"if test $fdtfile = undefined; then " \
 			"echo WARNING: Could not determine device tree to use; fi; \0" \
+	EEWIKI_NFS \
+	EEWIKI_BOOT \
+	EEWIKI_UNAME_BOOT \
 	NANDARGS \
 	NETARGS \
 	DFUARGS
 #endif
 
 #define CONFIG_BOOTCOMMAND \
+	"gpio set 53; " \
 	"run findfdt; " \
-	"run mmcboot;" \
+	"setenv interface mmc; " \
+	"setenv mmcdev 0; " \
+	"setenv bootpart 0:1; " \
+	"run boot;" \
+	"gpio clear 56; " \
+	"gpio clear 55; " \
+	"gpio clear 54; " \
 	"setenv mmcdev 1; " \
-	"setenv bootpart 1:2; " \
-	"run mmcboot;" \
-	"run nandboot;"
+	"setenv bootpart 1:1; " \
+	"run boot;" \
+	"run failumsboot;"
 
 /* NS16550 Configuration */
 #define CONFIG_SYS_NS16550_COM1		0x44e09000	/* Base EVM has UART0 */
@@ -309,9 +330,8 @@
 #endif
 
 #ifdef CONFIG_USB_MUSB_GADGET
-#define CONFIG_USB_ETHER
-#define CONFIG_USB_ETH_RNDIS
-#define CONFIG_USBNET_HOST_ADDR	"de:ad:be:af:00:00"
+#define CONFIG_CMD_USB_MASS_STORAGE
+#define CONFIG_USB_FUNCTION_MASS_STORAGE
 
 /* USB TI's IDs */
 #define CONFIG_G_DNL_VENDOR_NUM 0x0451

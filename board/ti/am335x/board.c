@@ -478,6 +478,24 @@ void sdram_init(void)
  */
 int board_init(void)
 {
+	u32 sys_reboot;
+
+	sys_reboot = readl(PRM_RSTST);
+	if (sys_reboot & (1 << 9))
+		puts("Reset Source: IcePick reset has occurred.\n");
+
+	if (sys_reboot & (1 << 5))
+		puts("Reset Source: Global external warm reset has occurred.\n");
+
+	if (sys_reboot & (1 << 4))
+		puts("Reset Source: watchdog reset has occurred.\n");
+
+	if (sys_reboot & (1 << 1))
+		puts("Reset Source: Global warm SW reset has occurred.\n");
+
+	if (sys_reboot & (1 << 0))
+		puts("Reset Source: Power-on reset has occurred.\n");
+
 #if defined(CONFIG_HW_WATCHDOG)
 	hw_watchdog_init();
 #endif
@@ -504,9 +522,14 @@ int board_late_init(void)
 	safe_string[sizeof(header.name)] = 0;
 	setenv("board_name", safe_string);
 
-	strncpy(safe_string, (char *)header.version, sizeof(header.version));
-	safe_string[sizeof(header.version)] = 0;
-	setenv("board_rev", safe_string);
+	/* BeagleBone Green has 0x1a at [0], they are free to increment 'a' */
+	if ( (header.version[0] != 0x30) && (header.version[0] & (1 << 4)) ) {
+		setenv("board_rev", "BBG1");
+	} else {
+		strncpy(safe_string, (char *)header.version, sizeof(header.version));
+		safe_string[sizeof(header.version)] = 0;
+		setenv("board_rev", safe_string);
+	}
 #endif
 
 	return 0;
