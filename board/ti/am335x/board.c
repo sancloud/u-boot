@@ -508,13 +508,9 @@ int board_late_init(void)
 	if ( (header.version[0] == 0x1a) && (header.version[1] == 0x00) &&
 	     (header.version[2] == 0x00) && (header.version[3] == 0x00) ) {
 		setenv("board_rev", "BBG1");
-	} else if ( (header.version[0] == 0x30) && (header.version[1] == 0x30) &&
-	            (header.version[2] == 0x41) && (header.version[3] == 0x35) ) {
+	} else if ( (header.version[0] == 0x53) && (header.version[1] == 0x45) &&
+	            (header.version[2] == 0x30) && (header.version[3] == 0x41) ) {
 		setenv("board_rev", "SE0A");
-		header.version[0] = 0x53;
-		header.version[1] = 0x45;
-		header.version[2] = 0x30;
-		header.version[3] = 0x41;
 	} else {
 		strncpy(safe_string, (char *)header.version, sizeof(header.version));
 		safe_string[sizeof(header.version)] = 0;
